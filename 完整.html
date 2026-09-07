@@ -1,0 +1,640 @@
+<!-- 车辆数据搜索与筛选工具 - 适用于灰机wiki（数据来自GitHub云端JSON） -->
+<div id="vehicle-search-app" style="font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f8f9fa; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+
+    <!-- 样式定义（已取消 .section 的外框） -->
+    <style>
+        #vehicle-search-app * { box-sizing: border-box; margin: 0; padding: 0; }
+        #vehicle-search-app .app-title { font-size: 24px; font-weight: 700; color: #2c3e50; margin-bottom: 20px; text-align: center; letter-spacing: 1px; }
+        #vehicle-search-app .section { padding: 18px 20px; margin-bottom: 16px; /* 移除背景、边框、阴影 */ }
+        #vehicle-search-app .section-title { font-size: 16px; font-weight: 600; color: #495057; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        #vehicle-search-app .section-title::before { content: ''; display: inline-block; width: 4px; height: 18px; background: #4a90d9; border-radius: 2px; }
+        #vehicle-search-app .upload-area { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+        #vehicle-search-app .upload-btn { display: inline-block; padding: 8px 18px; background: #4a90d9; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.2s; }
+        #vehicle-search-app .upload-btn:hover { background: #357abd; }
+        #vehicle-search-app .upload-btn:disabled { background: #a0c4e8; cursor: not-allowed; }
+        #vehicle-search-app .btn-secondary { display: inline-block; padding: 8px 16px; background: #6c757d; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; transition: background 0.2s; }
+        #vehicle-search-app .btn-secondary:hover { background: #5a6268; }
+        #vehicle-search-app .btn-outline { display: inline-block; padding: 7px 14px; background: transparent; color: #4a90d9; border: 1.5px solid #4a90d9; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s; }
+        #vehicle-search-app .btn-outline:hover { background: #4a90d9; color: #fff; }
+        #vehicle-search-app .btn-danger { display: inline-block; padding: 7px 14px; background: #dc3545; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; transition: background 0.2s; }
+        #vehicle-search-app .btn-danger:hover { background: #c82333; }
+        #vehicle-search-app .data-status { font-size: 13px; color: #6c757d; margin-left: 8px; }
+        #vehicle-search-app .data-status.success { color: #28a745; font-weight: 500; }
+        #vehicle-search-app .data-status.error { color: #dc3545; font-weight: 500; }
+        #vehicle-search-app .search-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+        #vehicle-search-app .search-row select, #vehicle-search-app .search-row input[type="text"] { padding: 8px 12px; border: 1.5px solid #ced4da; border-radius: 6px; font-size: 14px; transition: border-color 0.2s; outline: none; background: #fff; }
+        #vehicle-search-app .search-row select:focus, #vehicle-search-app .search-row input[type="text"]:focus { border-color: #4a90d9; box-shadow: 0 0 0 3px rgba(74,144,217,0.12); }
+        #vehicle-search-app .search-row select { min-width: 120px; cursor: pointer; }
+        #vehicle-search-app .search-row input[type="text"] { min-width: 200px; flex: 1; }
+        #vehicle-search-app .search-hint { font-size: 12px; color: #868e96; margin-top: 6px; }
+        #vehicle-search-app .filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+        #vehicle-search-app .filter-row label { font-size: 13px; color: #495057; font-weight: 500; white-space: nowrap; }
+        #vehicle-search-app .filter-row select { padding: 8px 12px; border: 1.5px solid #ced4da; border-radius: 6px; font-size: 14px; min-width: 140px; cursor: pointer; outline: none; background: #fff; transition: border-color 0.2s; }
+        #vehicle-search-app .filter-row select:focus { border-color: #4a90d9; box-shadow: 0 0 0 3px rgba(74,144,217,0.12); }
+        #vehicle-search-app .result-info { font-size: 13px; color: #495057; margin-bottom: 10px; }
+        #vehicle-search-app .result-info strong { color: #4a90d9; font-size: 15px; }
+        #vehicle-search-app .vehicle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+        #vehicle-search-app .vehicle-card { background: #fff; border: 1.5px solid #e9ecef; border-radius: 8px; padding: 14px 16px; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        #vehicle-search-app .vehicle-card:hover { border-color: #4a90d9; box-shadow: 0 4px 12px rgba(74,144,217,0.15); transform: translateY(-1px); }
+        #vehicle-search-app .vehicle-card .card-field { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 13px; border-bottom: 1px dashed #f1f3f5; }
+        #vehicle-search-app .vehicle-card .card-field:last-child { border-bottom: none; }
+        #vehicle-search-app .vehicle-card .field-label { color: #868e96; font-weight: 500; white-space: nowrap; margin-right: 8px; }
+        #vehicle-search-app .vehicle-card .field-value { color: #212529; font-weight: 500; text-align: right; word-break: break-all; }
+        #vehicle-search-app .vehicle-card .field-value.company { color: #4a90d9; font-weight: 600; }
+        #vehicle-search-app .vehicle-card .field-value.fleet-no { color: #e67e22; font-weight: 600; }
+        #vehicle-search-app .vehicle-card .field-value.plate { color: #2c3e50; font-weight: 600; letter-spacing: 0.5px; }
+        #vehicle-search-app .no-result { text-align: center; padding: 40px 20px; color: #868e96; font-size: 15px; }
+        #vehicle-search-app .no-result .icon { font-size: 40px; margin-bottom: 10px; }
+        #vehicle-search-app .export-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid #e9ecef; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        #vehicle-search-app .export-section textarea { width: 100%; min-height: 80px; padding: 10px; border: 1.5px solid #ced4da; border-radius: 6px; font-size: 12px; font-family: 'Courier New', monospace; resize: vertical; display: none; }
+        #vehicle-search-app .export-section textarea.visible { display: block; }
+        #vehicle-search-app .divider { height: 1px; background: #e9ecef; margin: 12px 0; }
+        @media (max-width: 600px) {
+            #vehicle-search-app .search-row { flex-direction: column; align-items: stretch; }
+            #vehicle-search-app .filter-row { flex-direction: column; align-items: stretch; }
+            #vehicle-search-app .vehicle-grid { grid-template-columns: 1fr; }
+            #vehicle-search-app .search-row input[type="text"] { min-width: auto; }
+        }
+    </style>
+
+    <!-- 标题 -->
+    <div class="app-title"> 沈阳公交车辆信息查询系统</div>
+
+    <!-- 数据状态区（替代原数据导入区） -->
+    <div class="section">
+        <div class="section-title">数据状态</div>
+        <div class="upload-area">
+            <span class="data-status" id="vsa-data-status">正在加载数据...</span>
+            <span style="flex:1;"></span>
+        </div>
+        <div class="export-section" id="vsa-export-section" style="display:none;">
+            <label style="font-size:13px; color:#495057; font-weight:500;">导出的JSON数据（可复制后嵌入wiki页面作为默认数据）:</label>
+            <textarea id="vsa-export-textarea" readonly></textarea>
+            <button class="btn-secondary" onclick="vsaCopyJSON()">📋 复制JSON</button>
+        </div>
+    </div>
+
+    <!-- 搜索区 -->
+    <div class="section">
+        <div class="section-title">模糊搜索</div>
+        <div class="search-row">
+            <select id="vsa-search-field">
+                <option value="fleet_no">自编号</option>
+                <option value="smart_no">智能机号</option>
+                <option value="plate_no">车牌号</option>
+                <option value="route">行驶线路</option>
+            </select>
+            <input type="text" id="vsa-search-input" placeholder="输入搜索关键词（支持汉字或至少3个数字）" />
+            <button class="upload-btn" id="vsa-search-btn" onclick="vsaPerformSearch()">🔍 搜索</button>
+            <button class="btn-secondary" onclick="vsaResetAll()">🔄 重置全部</button>
+        </div>
+        <div class="search-hint"></strong></div>
+    </div>
+
+    <!-- 筛选区 -->
+    <div class="section">
+        <div class="section-title">条件筛选</div>
+        <div class="filter-row">
+            <label> 公司：</label>
+            <select id="vsa-filter-company">
+                <option value="">全部公司</option>
+            </select>
+            <label>  品牌：</label>
+            <select id="vsa-filter-brand">
+                <option value="">全部品牌</option>
+            </select>
+            <label>  车型：</label>
+            <select id="vsa-filter-model">
+                <option value="">全部车型</option>
+            </select>
+            <button class="btn-secondary" onclick="vsaResetFilters()">🔄 重置筛选</button>
+        </div>
+        <div class="search-hint" style="margin-top:8px;"></div>
+    </div>
+
+    <!-- 结果展示区 -->
+    <div class="section" id="vsa-result-section">
+        <div class="section-title">查询结果</div>
+        <div class="result-info" id="vsa-result-info">共 <strong>0</strong> 台车辆</div>
+        <div class="vehicle-grid" id="vsa-result-grid">
+            <div class="no-result">
+                <div class="icon">📋</div>
+                <div>正在从云端加载数据，请稍候...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 核心逻辑脚本（已移除上传与本地存储，改为从GitHub加载） -->
+    <script>
+        (function() {
+            // ============ 全局状态 ============
+            var vehicleData = [];          // 存储所有车辆数据
+            var searchKeyword = '';        // 搜索关键词
+            var searchField = 'fleet_no';  // 搜索字段
+            var filterCompany = '';        // 筛选公司
+            var filterBrand = '';          // 筛选品牌
+            var filterModel = '';          // 筛选车型
+
+            // 数据文件 URL —— ⚠️ 请替换为你的实际链接（推荐使用 jsDelivr CDN）
+            var DATA_URL = 'https://raw.githubusercontent.com/SZM1421/vehicle-data/refs/heads/main/vehicle-data';
+            // 也可以使用 raw 链接（注意不要带 refs/heads/）：
+            // var DATA_URL = 'https://raw.githubusercontent.com/SZM1421/vehicle-data/refs/heads/main/vehicle-data';
+
+            var fieldMapping = {
+                '公司': 'company',
+                '自编号': 'fleet_no',
+                '智能机号': 'smart_no',
+                '车牌号': 'plate_no',
+                '行驶线路': 'route',
+                '品牌': 'brand',
+                '车型': 'model'
+            };
+
+            var labelMapping = {
+                'company': '公司',
+                'fleet_no': '自编号',
+                'smart_no': '智能机号',
+                'plate_no': '车牌号',
+                'route': '行驶线路',
+                'brand': '品牌',
+                'model': '车型'
+            };
+
+            // ============ 工具函数 ============
+            function stripSymbols(str) {
+                if (!str) return '';
+                return String(str).replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
+            }
+
+            function hasSymbols(str) {
+                return /[^\u4e00-\u9fa5a-zA-Z0-9]/.test(str);
+            }
+
+            function countDigits(str) {
+                if (!str) return 0;
+                var matches = String(str).match(/[0-9]/g);
+                return matches ? matches.length : 0;
+            }
+
+            function splitIntoAlnumSegments(str) {
+                if (!str) return [];
+                return String(str).split(/[^\u4e00-\u9fa5a-zA-Z0-9]+/).filter(function(seg) { return seg.length > 0; });
+            }
+
+            function fuzzyMatch(dataValue, searchValue) {
+                if (!searchValue) return false;
+                var dataStr = String(dataValue || '');
+                var searchStr = String(searchValue);
+
+                if (hasSymbols(searchStr)) {
+                    return dataStr.indexOf(searchStr) !== -1;
+                } else {
+                    var segments = splitIntoAlnumSegments(dataStr);
+                    for (var i = 0; i < segments.length; i++) {
+                        if (segments[i].indexOf(searchStr) !== -1) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            }
+
+            function matchRoute(routeValue, searchKeyword) {
+                if (!routeValue) return false;
+                if (hasSymbols(searchKeyword)) {
+                    return fuzzyMatch(routeValue, searchKeyword);
+                }
+                var segments = String(routeValue).split('/');
+                for (var i = 0; i < segments.length; i++) {
+                    var seg = segments[i].trim();
+                    if (seg === searchKeyword) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            function isSearchValid(input) {
+                var stripped = stripSymbols(input);
+                if (/[\u4e00-\u9fa5]/.test(stripped)) {
+                    return stripped.length > 0;
+                }
+                return countDigits(input) >= 3;
+            }
+
+            function hasData() {
+                return vehicleData.length > 0;
+            }
+
+            // ============ 数据加载（从 GitHub 获取） ============
+            function loadFromGitHub() {
+                updateDataStatus('正在加载数据...', false);
+                fetch(DATA_URL)
+                    .then(function(response) {
+                        if (!response.ok) {
+                            throw new Error('网络响应错误: ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(function(jsonData) {
+                        if (!Array.isArray(jsonData)) {
+                            throw new Error('数据格式不是数组');
+                        }
+                        // 映射数据，确保字段完整
+                        vehicleData = jsonData.map(function(item) {
+                            return {
+                                company: item.company || '',
+                                fleet_no: item.fleet_no || '',
+                                smart_no: item.smart_no || '',
+                                plate_no: item.plate_no || '',
+                                route: item.route || '',
+                                brand: item.brand || '',
+                                model: item.model || ''
+                            };
+                        });
+                        updateDataStatus('已从云端加载 ' + vehicleData.length + ' 条数据', true);
+                        refreshAllDropdowns();
+                        renderResults();
+                        showExportButton();
+                    })
+                    .catch(function(error) {
+                        console.error('加载数据失败:', error);
+                        updateDataStatus('数据加载失败，请检查链接或网络', false);
+                        document.getElementById('vsa-result-grid').innerHTML =
+                            '<div class="no-result"><div class="icon">⚠️</div><div>数据加载失败，请稍后刷新重试</div></div>';
+                    });
+            }
+
+            function updateDataStatus(message, isSuccess) {
+                var statusEl = document.getElementById('vsa-data-status');
+                if (statusEl) {
+                    statusEl.textContent = message;
+                    statusEl.className = 'data-status' + (isSuccess ? ' success' : '');
+                }
+            }
+
+            function showExportButton() {
+                var exportBtn = document.getElementById('vsa-export-btn');
+                if (exportBtn) exportBtn.style.display = 'inline-block';
+            }
+
+            // ============ 下拉框更新 ============
+            function getUniqueValues(field) {
+                var values = [];
+                var seen = {};
+                for (var i = 0; i < vehicleData.length; i++) {
+                    var val = vehicleData[i][field];
+                    if (val && val.trim() !== '' && !seen[val]) {
+                        seen[val] = true;
+                        values.push(val);
+                    }
+                }
+                values.sort(function(a, b) { return a.localeCompare(b, 'zh-CN'); });
+                return values;
+            }
+
+            function getUniqueValuesFiltered(field, conditions) {
+                var values = [];
+                var seen = {};
+                for (var i = 0; i < vehicleData.length; i++) {
+                    var vehicle = vehicleData[i];
+                    var match = true;
+                    for (var condField in conditions) {
+                        if (conditions[condField] && vehicle[condField] !== conditions[condField]) {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match) {
+                        var val = vehicle[field];
+                        if (val && val.trim() !== '' && !seen[val]) {
+                            seen[val] = true;
+                            values.push(val);
+                        }
+                    }
+                }
+                values.sort(function(a, b) { return a.localeCompare(b, 'zh-CN'); });
+                return values;
+            }
+
+            function refreshAllDropdowns() {
+                refreshCompanyDropdown();
+                refreshBrandDropdown();
+                refreshModelDropdown();
+            }
+
+            function refreshCompanyDropdown() {
+                var select = document.getElementById('vsa-filter-company');
+                if (!select) return;
+                var companies = getUniqueValues('company');
+                var currentValue = select.value;
+                var html = '<option value="">全部公司</option>';
+                for (var i = 0; i < companies.length; i++) {
+                    var selected = (companies[i] === currentValue) ? ' selected' : '';
+                    html += '<option value="' + companies[i].replace(/"/g, '&quot;') + '"' + selected + '>' + companies[i] + '</option>';
+                }
+                select.innerHTML = html;
+            }
+
+            function refreshBrandDropdown() {
+                var select = document.getElementById('vsa-filter-brand');
+                if (!select) return;
+                var brands;
+                var currentCompany = document.getElementById('vsa-filter-company') ?
+                    document.getElementById('vsa-filter-company').value : '';
+                if (currentCompany) {
+                    brands = getUniqueValuesFiltered('brand', { company: currentCompany });
+                } else {
+                    brands = getUniqueValues('brand');
+                }
+                var currentValue = select.value;
+                var html = '<option value="">全部品牌</option>';
+                for (var i = 0; i < brands.length; i++) {
+                    var selected = (brands[i] === currentValue) ? ' selected' : '';
+                    html += '<option value="' + brands[i].replace(/"/g, '&quot;') + '"' + selected + '>' + brands[i] + '</option>';
+                }
+                select.innerHTML = html;
+                refreshModelDropdown();
+            }
+
+            function refreshModelDropdown() {
+                var select = document.getElementById('vsa-filter-model');
+                if (!select) return;
+                var models;
+                var currentCompany = document.getElementById('vsa-filter-company') ?
+                    document.getElementById('vsa-filter-company').value : '';
+                var currentBrand = document.getElementById('vsa-filter-brand') ?
+                    document.getElementById('vsa-filter-brand').value : '';
+
+                var conditions = {};
+                if (currentCompany) conditions.company = currentCompany;
+                if (currentBrand) conditions.brand = currentBrand;
+
+                if (Object.keys(conditions).length > 0) {
+                    models = getUniqueValuesFiltered('model', conditions);
+                } else {
+                    models = getUniqueValues('model');
+                }
+
+                var currentValue = select.value;
+                var html = '<option value="">全部车型</option>';
+                for (var i = 0; i < models.length; i++) {
+                    var selected = (models[i] === currentValue) ? ' selected' : '';
+                    html += '<option value="' + models[i].replace(/"/g, '&quot;') + '"' + selected + '>' + models[i] + '</option>';
+                }
+                select.innerHTML = html;
+            }
+
+            // ============ 搜索与筛选逻辑 ============
+            function performSearch() {
+                var input = document.getElementById('vsa-search-input');
+                var fieldSelect = document.getElementById('vsa-search-field');
+                if (!input || !fieldSelect) return;
+
+                searchField = fieldSelect.value;
+                var keyword = input.value.trim();
+
+                if (keyword === '') {
+                    searchKeyword = '';
+                    renderResults();
+                    return;
+                }
+
+                if (!isSearchValid(keyword)) {
+                    alert('搜索关键词无效：请至少输入3个数字，或输入汉字。');
+                    return;
+                }
+
+                clearFiltersOnly();
+                searchKeyword = keyword;
+                renderResults();
+            }
+
+            function clearFiltersOnly() {
+                var companySelect = document.getElementById('vsa-filter-company');
+                var brandSelect = document.getElementById('vsa-filter-brand');
+                var modelSelect = document.getElementById('vsa-filter-model');
+                if (companySelect) companySelect.value = '';
+                if (brandSelect) brandSelect.value = '';
+                if (modelSelect) modelSelect.value = '';
+                filterCompany = '';
+                filterBrand = '';
+                filterModel = '';
+                refreshBrandDropdown();
+                refreshModelDropdown();
+            }
+
+            function resetAll() {
+                var input = document.getElementById('vsa-search-input');
+                var fieldSelect = document.getElementById('vsa-search-field');
+                if (input) input.value = '';
+                if (fieldSelect) fieldSelect.value = 'fleet_no';
+                searchKeyword = '';
+                searchField = 'fleet_no';
+                resetFilters();
+            }
+
+            function resetFilters() {
+                clearFiltersOnly();
+                renderResults();
+            }
+
+            function getCurrentFilters() {
+                var companySelect = document.getElementById('vsa-filter-company');
+                var brandSelect = document.getElementById('vsa-filter-brand');
+                var modelSelect = document.getElementById('vsa-filter-model');
+                filterCompany = companySelect ? companySelect.value : '';
+                filterBrand = brandSelect ? brandSelect.value : '';
+                filterModel = modelSelect ? modelSelect.value : '';
+                return {
+                    company: filterCompany,
+                    brand: filterBrand,
+                    model: filterModel
+                };
+            }
+
+            function matchesFilters(vehicle, filters) {
+                if (filters.company && vehicle.company !== filters.company) return false;
+                if (filters.brand && vehicle.brand !== filters.brand) return false;
+                if (filters.model && vehicle.model !== filters.model) return false;
+                return true;
+            }
+
+            // 修改后的匹配搜索函数：只匹配指定字段，无回退
+            function matchesSearch(vehicle) {
+                if (searchKeyword === '') return true;
+                var fieldValue = vehicle[searchField] || '';
+                if (searchField === 'route') {
+                    return matchRoute(fieldValue, searchKeyword);
+                } else {
+                    return fuzzyMatch(fieldValue, searchKeyword);
+                }
+            }
+
+            function renderResults() {
+                var grid = document.getElementById('vsa-result-grid');
+                var info = document.getElementById('vsa-result-info');
+                if (!grid || !info) return;
+
+                if (!hasData()) {
+                    grid.innerHTML = '<div class="no-result"><div class="icon">📋</div><div>暂无数据，请稍后刷新重试</div></div>';
+                    info.innerHTML = '共 <strong>0</strong> 台车辆';
+                    return;
+                }
+
+                var filters = getCurrentFilters();
+                var results = [];
+                for (var i = 0; i < vehicleData.length; i++) {
+                    var vehicle = vehicleData[i];
+                    if (matchesFilters(vehicle, filters) && matchesSearch(vehicle)) {
+                        results.push(vehicle);
+                    }
+                }
+
+                info.innerHTML = '共 <strong>' + results.length + '</strong> 台车辆' +
+                    (searchKeyword ? '（搜索关键词："' + searchKeyword + '"）' : '') +
+                    (filters.company || filters.brand || filters.model ? '（已应用筛选条件）' : '');
+
+                if (results.length === 0) {
+                    grid.innerHTML = '<div class="no-result"><div class="icon">🔍</div><div>没有找到匹配的车辆，请调整搜索或筛选条件</div></div>';
+                    return;
+                }
+
+                var html = '';
+                for (var j = 0; j < results.length; j++) {
+                    var v = results[j];
+                    html += '<div class="vehicle-card">';
+                    html += '<div class="card-field"><span class="field-label">公司</span><span class="field-value company">' + escapeHtml(v.company || '-') + '</span></div>';
+                    html += '<div class="card-field"><span class="field-label">自编号</span><span class="field-value fleet-no">' + escapeHtml(v.fleet_no || '-') + '</span></div>';
+                    html += '<div class="card-field"><span class="field-label">智能机号</span><span class="field-value">' + escapeHtml(v.smart_no || '-') + '</span></div>';
+                    html += '<div class="card-field"><span class="field-label">车牌号</span><span class="field-value plate">' + escapeHtml(v.plate_no || '-') + '</span></div>';
+                    html += '<div class="card-field"><span class="field-label">行驶线路</span><span class="field-value">' + escapeHtml(v.route || '-') + '</span></div>';
+                    html += '<div class="card-field"><span class="field-label">品牌</span><span class="field-value">' + escapeHtml(v.brand || '-') + '</span></div>';
+                    html += '<div class="card-field"><span class="field-label">车型</span><span class="field-value">' + escapeHtml(v.model || '-') + '</span></div>';
+                    html += '</div>';
+                }
+                grid.innerHTML = html;
+            }
+
+            function escapeHtml(str) {
+                if (!str) return '';
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            // ============ 导出功能 ============
+            function exportJSON() {
+                if (!hasData()) return;
+                var json = JSON.stringify(vehicleData, null, 2);
+                var textarea = document.getElementById('vsa-export-textarea');
+                var section = document.getElementById('vsa-export-section');
+                if (textarea && section) {
+                    textarea.value = json;
+                    section.style.display = 'block';
+                    textarea.classList.add('visible');
+                    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+
+            function copyJSON() {
+                var textarea = document.getElementById('vsa-export-textarea');
+                if (!textarea) return;
+                textarea.select();
+                textarea.setSelectionRange(0, textarea.value.length);
+                try {
+                    document.execCommand('copy');
+                    alert('JSON数据已复制到剪贴板！');
+                } catch (e) {
+                    alert('复制失败，请手动选择文本复制。');
+                }
+            }
+
+            // ============ 事件绑定 ============
+            function init() {
+                // 初始状态提示
+                updateDataStatus('正在加载数据...', false);
+
+                var searchBtn = document.getElementById('vsa-search-btn');
+                if (searchBtn) {
+                    searchBtn.addEventListener('click', performSearch);
+                }
+
+                var searchInput = document.getElementById('vsa-search-input');
+                if (searchInput) {
+                    searchInput.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            performSearch();
+                        }
+                    });
+                }
+
+                var searchFieldSelect = document.getElementById('vsa-search-field');
+                if (searchFieldSelect) {
+                    searchFieldSelect.addEventListener('change', function() {
+                        searchField = this.value;
+                        if (searchKeyword !== '') {
+                            renderResults();
+                        }
+                    });
+                }
+
+                var companySelect = document.getElementById('vsa-filter-company');
+                if (companySelect) {
+                    companySelect.addEventListener('change', function() {
+                        clearSearchOnly();
+                        filterCompany = this.value;
+                        refreshBrandDropdown();
+                        refreshModelDropdown();
+                        renderResults();
+                    });
+                }
+
+                var brandSelect = document.getElementById('vsa-filter-brand');
+                if (brandSelect) {
+                    brandSelect.addEventListener('change', function() {
+                        clearSearchOnly();
+                        filterBrand = this.value;
+                        refreshModelDropdown();
+                        renderResults();
+                    });
+                }
+
+                var modelSelect = document.getElementById('vsa-filter-model');
+                if (modelSelect) {
+                    modelSelect.addEventListener('change', function() {
+                        clearSearchOnly();
+                        filterModel = this.value;
+                        renderResults();
+                    });
+                }
+
+                // 从 GitHub 加载数据
+                loadFromGitHub();
+            }
+
+            function clearSearchOnly() {
+                var input = document.getElementById('vsa-search-input');
+                if (input) input.value = '';
+                searchKeyword = '';
+            }
+
+            // 暴露全局函数（供按钮 onclick 调用）
+            window.vsaPerformSearch = performSearch;
+            window.vsaResetAll = resetAll;
+            window.vsaResetFilters = resetFilters;
+            window.vsaExportJSON = exportJSON;
+            window.vsaCopyJSON = copyJSON;
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
+    </script>
+</div>
