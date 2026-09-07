@@ -62,7 +62,7 @@
 
     <!-- 数据状态区（替代原数据导入区） -->
     <div class="section">
-        <div class="section-title">数据状态</div>
+        <div class="section-title">数据状态（若加载失败，请刷新页面）</div>
         <div class="upload-area">
             <span class="data-status" id="vsa-data-status">正在加载数据...</span>
             <span style="flex:1;"></span>
@@ -88,7 +88,7 @@
             <button class="upload-btn" id="vsa-search-btn" onclick="vsaPerformSearch()">🔍 搜索</button>
             <button class="btn-secondary" onclick="vsaResetAll()">🔄 重置全部</button>
         </div>
-        <div class="search-hint"></strong></div>
+        <div class="search-hint"style="margin-top:8px;">💡 按行驶线路查询时，数字线路规范输入格式为“000”“000支”“V000”“V000支”“K000”，汉字线路规范输入格式为“环”“铁西一线”“铁西二线”“浑南一线”“观光一线”“预备役号”“汽车城专线”“医大北校区临时专线”“医大一院就医专线”“浑河雷锋号”，配车不固定的定制线路及非对外运营的通勤线路不支持搜索；按自编号、智能机号、车牌号查询时，至少输入三位数字才可启用模糊搜索。</div>
     </div>
 
     <!-- 筛选区 -->
@@ -109,7 +109,7 @@
             </select>
             <button class="btn-secondary" onclick="vsaResetFilters()">🔄 重置筛选</button>
         </div>
-        <div class="search-hint" style="margin-top:8px;"></div>
+        <div class="search-hint" style="margin-top:8px;">💡 选择任意筛选条件后将自动清除搜索关键词；同样，执行搜索时将自动清除所有筛选条件。</div>
     </div>
 
     <!-- 结果展示区 -->
